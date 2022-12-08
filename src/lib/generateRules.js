@@ -13,6 +13,7 @@ import { isValidVariantFormatString, parseVariant } from './setupContextUtils'
 import isValidArbitraryValue from '../util/isSyntacticallyValidPropertyValue'
 import { splitAtTopLevelOnly } from '../util/splitAtTopLevelOnly.js'
 import { flagEnabled } from '../featureFlags'
+import { resolveMatches as oxideResolveMatches } from '../oxide/core/resolve-matches'
 
 let classNameParser = selectorParser((selectors) => {
   return selectors.first.filter(({ type }) => type === 'class').pop().value
@@ -807,7 +808,11 @@ function generateRules(candidates, context) {
       continue
     }
 
-    let matches = Array.from(resolveMatches(candidate, context))
+    let matches = Array.from(
+      sharedState.env.OXIDE
+        ? oxideResolveMatches(candidate, context)
+        : resolveMatches(candidate, context)
+    )
 
     if (matches.length === 0) {
       context.notClassCache.add(candidate)

@@ -208,6 +208,10 @@ export function parseVariant(variant) {
 
   let fns = parseVariantFormatString(variant)
     .map((str) => {
+      if (env.OXIDE) {
+        return ({ format }) => format(str)
+      }
+
       if (!str.startsWith('@')) {
         return ({ format }) => format(str)
       }
