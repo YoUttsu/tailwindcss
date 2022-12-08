@@ -55,10 +55,10 @@ test('it parses nested pseudo-selectors', () => {
       backgroundColor: 'red',
       color: 'white',
       padding: '1rem',
-      ':hover': {
+      '&:hover': {
         backgroundColor: 'orange',
       },
-      ':focus': {
+      '&:focus': {
         backgroundColor: 'blue',
       },
     },
@@ -155,7 +155,7 @@ test('it parses pseudo-selectors in nested media queries', () => {
       backgroundColor: 'red',
       color: 'white',
       padding: '1rem',
-      ':hover': {
+      '&:hover': {
         '@media (min-width: 200px)': {
           backgroundColor: 'orange',
         },

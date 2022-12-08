@@ -1115,21 +1115,27 @@ test('arbitrary variant selectors should not re-order scrollbar pseudo classes',
     .\[\&\:\:-webkit-resizer\:hover\]\:underline::-webkit-resizer:hover {
       text-decoration-line: underline;
     }
+
     .\[\&\:\:-webkit-scrollbar-button\:hover\]\:underline::-webkit-scrollbar-button:hover {
       text-decoration-line: underline;
     }
+
     .\[\&\:\:-webkit-scrollbar-corner\:hover\]\:underline::-webkit-scrollbar-corner:hover {
       text-decoration-line: underline;
     }
+
     .\[\&\:\:-webkit-scrollbar-thumb\:hover\]\:underline::-webkit-scrollbar-thumb:hover {
       text-decoration-line: underline;
     }
+
     .\[\&\:\:-webkit-scrollbar-track-piece\:hover\]\:underline::-webkit-scrollbar-track-piece:hover {
       text-decoration-line: underline;
     }
+
     .\[\&\:\:-webkit-scrollbar-track\:hover\]\:underline::-webkit-scrollbar-track:hover {
       text-decoration-line: underline;
     }
+
     .\[\&\:\:-webkit-scrollbar\:hover\]\:underline::-webkit-scrollbar:hover {
       text-decoration-line: underline;
     }
