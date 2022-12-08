@@ -252,7 +252,6 @@ test('stacked peer variants', async () => {
   }
 
   let input = css`
-    @tailwind base;
     @tailwind components;
     @tailwind utilities;
   `
@@ -265,7 +264,7 @@ test('stacked peer variants', async () => {
   `
 
   let result = await run(input, config)
-  expect(result.css).toIncludeCss(expected)
+  expect(result.css).toMatchFormattedCss(expected)
 })
 
 it('should properly handle keyframes with multiple variants', async () => {

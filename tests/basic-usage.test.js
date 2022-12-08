@@ -372,12 +372,11 @@ it('supports multiple backgrounds as arbitrary values even if only some are quot
 
   return run(input, config).then((result) => {
     expect(result.css).toMatchFormattedCss(css`
-      .bg-\[url\(\'\/images\/one-two-three\.png\'\)\2c
-        linear-gradient\(to_right\2c
-        _\#eeeeee\2c
+      .bg-\[url\(\'\/images\/one-two-three\.png\'\)\,
+        linear-gradient\(to_right\,
+        _\#eeeeee\,
         _\#000000\)\] {
-        background-image: url('/images/one-two-three.png'),
-          linear-gradient(to right, #eeeeee, #000000);
+        background-image: url('/images/one-two-three.png'), linear-gradient(to right, #eee, #000);
       }
     `)
   })
