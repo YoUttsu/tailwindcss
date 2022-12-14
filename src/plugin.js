@@ -36,7 +36,7 @@ module.exports = function tailwindcss(configOrPath) {
       },
       // false &&
       env.OXIDE &&
-        function (root, result) {
+        function (_root, result) {
           let postcss = require('postcss')
           let lightningcss = require('lightningcss')
           let browserslist = require('browserslist')

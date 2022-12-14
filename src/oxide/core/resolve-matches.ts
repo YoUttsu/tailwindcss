@@ -45,8 +45,9 @@ type Match = [
       respectPrefix: boolean
       respectImportant: boolean
       types: { type: string; preferOnConflict?: boolean }[]
-      collectedFormats?: string[]
+      // collectedFormats?: string[]
     }
+    important: boolean
   },
   Node
 ]
@@ -138,28 +139,44 @@ function applyPrefix(matches: Match[], context: Context) {
   return matches
 }
 
-function applyImportant(matches: Match[], classCandidate: string) {
+function applyImportant(matches: Match[]) {
   if (matches.length === 0) {
     return matches
   }
-  let result = []
+
+  let result: Match[] = []
 
   for (let [meta, rule] of matches) {
     let container = postcss.root({ nodes: [rule.clone()] })
-    container.walkRules((r) => {
-      r.selector = updateAllClasses(
-        filterSelectorsForClass(r.selector, classCandidate),
-        (className: string) => {
-          if (className === classCandidate) {
-            return `!${className}`
-          }
-          return className
-        }
-      )
-      r.walkDecls((d) => {
-        d.important = true
-      })
+
+    container.walkDecls((d) => {
+      d.important = true
     })
+
+    // BUG WORKAROUND: Wrapping the contents of the atRule in an additional rule using
+    // the simple & selector. This allows lightning to properly parse the contents of
+    // a @media rule where a declaration has the !important modifier.
+    //
+    // Expected, but doesn't work:
+    // .foo {
+    //   @media (min-width: 400px) {
+    //     color: red !important;
+    //   }
+    // }
+    //
+    // Workaround produces this, which works:
+    // .foo {
+    //   @media (min-width: 400px) {
+    //     & {
+    //       color: red !important;
+    //     }
+    //   }
+    // }
+    container.walkAtRules((rule) => {
+      rule.nodes = [postcss.rule({ selector: '&', nodes: rule.nodes })]
+    })
+
+    // TODO: What is this `important` doing?
     result.push([{ ...meta, important: true }, container.nodes[0]])
   }
 
@@ -322,8 +339,30 @@ function applyVariant(variant: string, children: Match[], context: any) {
               let matches = /@(.*?)( .+|[({].*)/g.exec(format)
               if (matches) {
                 let [, name, params] = matches
-
-                return postcss.atRule({ name, params, nodes: children })
+                return postcss.atRule({
+                  name: name.trim(),
+                  params: params.trim(),
+                  // BUG WORKAROUND: Wrapping the contents of the atRule in an additional rule using
+                  // the simple & selector. This allows lightning to properly parse the contents of
+                  // a @media rule where a declaration has the !important modifier.
+                  //
+                  // Expected, but doesn't work:
+                  // .foo {
+                  //   @media (min-width: 400px) {
+                  //     color: red !important;
+                  //   }
+                  // }
+                  //
+                  // Workaround produces this, which works:
+                  // .foo {
+                  //   @media (min-width: 400px) {
+                  //     & {
+                  //       color: red !important;
+                  //     }
+                  //   }
+                  // }
+                  nodes: [postcss.rule({ selector: '&', nodes: children })],
+                })
               }
             }
 
@@ -332,8 +371,25 @@ function applyVariant(variant: string, children: Match[], context: any) {
              */
             // TODO: Handle the `:merge`
             if (format.includes(':merge')) {
+              let [, target, rest] = /\:merge\((.*)\)([^ ]*)/g.exec(format)!
+              let found = false
+              let childrenContainer = postcss.root({ nodes: children })
+              childrenContainer.walkRules((rule) => {
+                if (rule.selector.includes(`:merge(${target})`)) {
+                  let [, target, rest] = /\:merge\((.*)\)([^ ]*)/g.exec(rule.selector)!
+                  rule.selector = format.replace(`:merge(${target})`, `:merge(${target})${rest}`)
+                  // rule.selector = rule.selector.replace(
+                  //   `:merge(${target})`,
+                  //   `:merge(${target})${rest}`
+                  // )
+                  found = true
+                }
+              })
               // return postcss.root({ nodes: children })
-              return postcss.rule({ selector: format, nodes: children })
+              return postcss.rule({
+                selector: found ? '&' : format,
+                nodes: childrenContainer.nodes,
+              })
             }
 
             return postcss.rule({ selector: format, nodes: children })
@@ -344,18 +400,7 @@ function applyVariant(variant: string, children: Match[], context: any) {
         })
       }
 
-      // Drop :merge()
-      // TODO: Might need to move to a later step
-      // let selectorFunctions = new Set([':merge'])
-      // localClone.walkRules((rule) => {
-      //   let ast = selectorParser().astSync(rule.selector)
-      //   ast.walkPseudos((node) => {
-      //     if (selectorFunctions.has(node.value)) {
-      //       node.replaceWith(node.nodes)
-      //     }
-      //   })
-      //   rule.selector = ast.toString()
-      // })
+      // console.log(localClone.toString())
 
       result.push([
         {
@@ -365,7 +410,7 @@ function applyVariant(variant: string, children: Match[], context: any) {
             variantSort,
             Object.assign(args, context.variantOptions.get(variant))
           ),
-          collectedFormats: (meta.collectedFormats ?? []).concat(collectedFormats),
+          // collectedFormats: (meta.collectedFormats ?? []).concat(collectedFormats),
           isArbitraryVariant: isArbitraryValue(variant),
         },
         localClone.nodes[0],
@@ -741,7 +786,7 @@ export function* resolveMatches(candidate: string, context: Context, original = 
     flattenedMatches = applyNewSelector(flattenedMatches, { from: classCandidate, to: candidate })
 
     if (important) {
-      flattenedMatches = applyImportant(flattenedMatches, classCandidate)
+      flattenedMatches = applyImportant(flattenedMatches)
     }
 
     for (let variant of variants) {

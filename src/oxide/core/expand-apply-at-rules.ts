@@ -107,8 +107,14 @@ export function expandApplyAtRules(context: TailwindContext) {
       ) as [RuleOffset, Rule][]
 
       for (let [, applyRule] of resolvedRules) {
-        // TODO: Handle `important`
-        rule.before(applyRule.clone().nodes)
+        console.log(applyRule.toString())
+        applyRule = applyRule.clone()
+        if (important) {
+          applyRule.walkDecls((decl) => {
+            decl.important = important
+          })
+        }
+        rule.before(applyRule.nodes)
       }
 
       rule.remove()

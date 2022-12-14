@@ -448,4 +448,37 @@ group('@apply', () => {
       )
     })
   })
+
+  it('should mark utils as important when using !important', async () => {
+    let config = {
+      content: [{ raw: html`<button class="btn btn-2">My Button</button>` }],
+    }
+
+    let input = css`
+      @tailwind components;
+      @tailwind utilities;
+
+      .btn {
+        @apply font-bold underline !important;
+      }
+
+      /* Mutability check: Ensuring this is generated _without_ the !important */
+      .btn-2 {
+        @apply underline;
+      }
+    `
+
+    return run(input, config).then((result) => {
+      expect(result.css).toMatchFormattedCss(css`
+        .btn {
+          font-weight: 700 !important;
+          text-decoration-line: underline !important;
+        }
+
+        .btn-2 {
+          text-decoration-line: underline;
+        }
+      `)
+    })
+  })
 })

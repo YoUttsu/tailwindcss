@@ -530,7 +530,7 @@ function* recordCandidates(matches, classCandidate) {
   }
 }
 
-function* resolveMatches(candidate, context, original = candidate) {
+export function* resolveMatches(candidate, context, original = candidate) {
   let separator = context.tailwindConfig.separator
   let [classCandidate, ...variants] = splitWithSeparator(candidate, separator).reverse()
   let important = false
@@ -787,14 +787,34 @@ function getImportantStrategy(important) {
         return
       }
 
-      rule.selectors = rule.selectors.map((selector) => {
-        return `${important} ${selector}`
-      })
+      if (sharedState.env.OXIDE) {
+        let isLeafRule = true
+        rule.walkRules(() => {
+          isLeafRule = false
+          return false
+        })
+
+        if (isLeafRule) {
+          let current = rule.clone()
+          let wrapper = postcss.rule({
+            selector: `${important} &`,
+            nodes: current.nodes,
+          })
+          current.nodes = [wrapper]
+          console.log(current.toString())
+          rule.replaceWith(current)
+          return false
+        }
+      } else {
+        rule.selectors = rule.selectors.map((selector) => {
+          return `${important} ${selector}`
+        })
+      }
     }
   }
 }
 
-function generateRules(candidates, context) {
+export function generateRules(candidates, context) {
   let allRules = []
   let strategy = getImportantStrategy(context.tailwindConfig.important)
 
@@ -824,7 +844,7 @@ function generateRules(candidates, context) {
     let rules = context.candidateRuleCache.get(candidate) ?? new Set()
     context.candidateRuleCache.set(candidate, rules)
 
-    for (const match of matches) {
+    for (let match of matches) {
       let [{ sort, options }, rule] = match
 
       if (options.respectImportant && strategy) {
@@ -846,5 +866,3 @@ function generateRules(candidates, context) {
 function isArbitraryValue(input) {
   return input.startsWith('[') && input.endsWith(']')
 }
-
-export { resolveMatches, generateRules }

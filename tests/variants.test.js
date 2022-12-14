@@ -245,9 +245,12 @@ describe('custom advanced variants', () => {
   })
 })
 
-test('stacked peer variants', async () => {
+test.only('stacked peer variants', async () => {
   let config = {
-    content: [{ raw: 'peer-disabled:peer-focus:peer-hover:border-blue-500' }],
+    content: [
+      { raw: 'peer-disabled:peer-focus:peer-hover:border-blue-500' },
+      // { raw: 'group-focus:group-hover:peer-disabled:peer-focus:peer-hover:border-blue-500' },
+    ],
     corePlugins: { preflight: false },
   }
 

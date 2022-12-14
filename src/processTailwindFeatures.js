@@ -1,3 +1,4 @@
+import selectorParser from 'postcss-selector-parser'
 import normalizeTailwindDirectives from './lib/normalizeTailwindDirectives'
 import expandTailwindAtRules from './lib/expandTailwindAtRules'
 import expandApplyAtRules from './lib/expandApplyAtRules'
@@ -63,5 +64,19 @@ export default function processTailwindFeatures(setupContext) {
 
     collapseAdjacentRules(context)(root, result)
     collapseDuplicateDeclarations(context)(root, result)
+
+    // Drop :merge()
+    root.walkRules((rule) => {
+      if (rule.selector.includes(':merge')) {
+        let selectorFunctions = new Set([':merge'])
+        let ast = selectorParser().astSync(rule.selector)
+        ast.walkPseudos((node) => {
+          if (selectorFunctions.has(node.value)) {
+            node.replaceWith(node.nodes)
+          }
+        })
+        rule.selector = ast.toString()
+      }
+    })
   }
 }

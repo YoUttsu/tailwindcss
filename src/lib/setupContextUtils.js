@@ -916,6 +916,7 @@ function registerPlugins(plugins, context) {
     prefix(context, 'peer'),
   ]
   context.getClassOrder = function getClassOrder(classes) {
+    console.log(classes)
     // Non-util classes won't be generated, so we default them to null
     let sortedClassNames = new Map(classes.map((className) => [className, null]))
 
